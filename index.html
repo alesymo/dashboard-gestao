@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão 5S - Packing Mono</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root { 
+            --bg: #f4f7fa; --card: #ffffff; --accent: #1e3a8a; --yellow: #facc15; 
+            --success: #16a34a; --danger: #dc2626; --text: #1e293b; --border: #cbd5e1;
+            --blue-ml: #2563eb;
+        }
+        
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: var(--text); font-size: 13px; display: flex; flex-direction: column; min-height: 100vh; }
+        header { background: var(--accent); padding: 12px; text-align: center; border-bottom: 4px solid var(--yellow); color: white; position: relative; }
+        header h1 { margin: 0; font-size: 18px; text-transform: uppercase; }
+
+        .btn-config { position: absolute; right: 20px; top: 12px; background: none; border: none; font-size: 18px; cursor: pointer; color: white; transition: transform 0.3s; }
+        .btn-config:hover { transform: rotate(90deg); }
+
+        .container { padding: 15px; max-width: 1400px; margin: auto; flex: 1; width: 100%; box-sizing: border-box; }
+        
+        .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+        .tab { padding: 10px 16px; background: #e2e8f0; border-radius: 6px; cursor: pointer; font-weight: 700; color: #475569; font-size: 12px; }
+        .tab.active { background: var(--accent); color: white; }
+
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 15px; }
+        .kpi-card { background: var(--card); padding: 12px; border-radius: 8px; border-left: 5px solid var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .kpi-card h4 { margin: 0; font-size: 10px; color: #64748b; text-transform: uppercase; }
+        .kpi-card .val { font-size: 20px; font-weight: 800; color: var(--accent); }
+        .kpi-card .pct { font-size: 11px; font-weight: 600; color: #64748b; margin-left: 5px; }
+        
+        .kpi-disponivel { border-left-color: var(--success); }
+        .kpi-ocupado { border-left-color: var(--blue-ml); }
+        .kpi-inoperante { border-left-color: var(--danger); }
+
+        .controls { background: var(--card); padding: 12px; border-radius: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 15px; border: 1px solid var(--border); }
+        select, input, button { padding: 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; }
+        
+        .escala-group { display: flex; gap: 8px; align-items: center; background: #f8fafc; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); }
+        
+        button { background: var(--success); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { filter: brightness(0.9); }
+        button.btn-blue { background: #2563eb; }
+        button.btn-export { background: #8b5cf6; }
+        button.btn-danger { background: var(--danger); }
+
+        .table-container { background: var(--card); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 12px; }
+        th { background: #f8fafc; padding: 10px; color: var(--accent); font-size: 10px; text-transform: uppercase; border: 1px solid var(--border); }
+        td { padding: 0; border: 1px solid var(--border); text-align: center; vertical-align: middle; }
+
+        .crit-container { display: flex; flex-direction: column; width: 100%; }
+        .crit-item { height: 38px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        .crit-item:last-child { border-bottom: none; }
+
+        .sel-container { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .sel-wrapper { height: 38px; display: flex; align-items: center; justify-content: center; width: 100%; border-bottom: 1px solid #f1f5f9; }
+        .sel-wrapper:last-child { border-bottom: none; }
+
+        .sel-5s { 
+            width: 60px; height: 26px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; 
+            font-weight: 900; font-size: 11px; text-align: center; background: #fff; color: var(--text); padding: 2px;
+        }
+        
+        .txt-ok { color: #16a34a !important; border: 2px solid #16a34a !important; }
+        .txt-nc { color: #dc2626 !important; border: 2px solid #dc2626 !important; }
+
+        .rank-grid { display: grid; grid-template-columns: 350px 1fr; gap: 15px; }
+        .rank-box { background: var(--card); padding: 15px; border-radius: 10px; box-shadow: 0 3px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .rank-box h3 { margin-top: 0; color: var(--accent); border-bottom: 3px solid var(--yellow); padding-bottom: 6px; font-size: 14px; }
+        .rank-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-weight: 700; font-size: 12px; }
+        .score-val { color: var(--success); }
+        .full-list { max-height: 400px; overflow-y: auto; padding-right: 5px; }
+        .hist-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .hist-table th, .hist-table td { padding: 6px; border: 1px solid #e2e8f0; }
+
+        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; font-weight: bold; }
+
+        #export-title-area { display: none; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); }
+        #export-title-area h2 { margin: 0; color: var(--accent); font-size: 18px; }
+        #export-title-area p { margin: 5px 0 0 0; color: #64748b; font-size: 12px; font-weight: 600; }
+
+        footer { background: #e2e8f0; text-align: center; padding: 10px; color: #64748b; font-size: 11px; font-weight: 600; border-top: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+    <div style="font-size: 40px; margin-bottom: 15px;">📦</div>
+    <div id="loadingText">Sincronizando com a Planilha...</div>
+</div>
+
+<header>
+    <h1>Gestão 5S - Packing Mono</h1>
+    <button class="btn-config" title="Configurações" onclick="configurarSenha()">⚙️</button>
+</header>
+
+<div class="container">
+    <div class="tabs">
+        <div class="tab active" onclick="trocarAba(event,'escala')">👥 Equipe</div>
+        <div class="tab" onclick="trocarAba(event,'bancadas')">📋 Auditoria</div>
+        <div class="tab" onclick="trocarAba(event,'ranking')">📊 Ranking & Médias</div>
+    </div>
+
+    <div id="abaEscalas">
+        <div id="kpisEscalas" class="kpi-row"></div>
+        <div class="controls">
+            <input type="text" id="nome" placeholder="Nome do colaborador" style="flex:1">
+            <select id="escalaAdd">
+                <option value="A">Escala A</option><option value="B">Escala B</option>
+                <option value="C">Escala C</option><option value="D">Escala D</option>
+            </select>
+            <button onclick="adicionarMembro()">+ Adicionar Colaborador</button>
+        </div>
+        <div id="dashboardEscalas"></div>
+    </div>
+
+    <div id="abaBancadas" style="display:none">
+        <div id="kpisStatusBancadas" class="kpi-row">
+            <div class="kpi-card kpi-ocupado"><h4>Bancadas Ocupadas</h4><div class="val" id="kpiOcupadas">0 <span class="pct">(0%)</span></div></div>
+            <div class="kpi-card kpi-disponivel"><h4>Bancadas Disponíveis</h4><div class="val" id="kpiDisponiveis">24 <span class="pct">(100%)</span></div></div>
+            <div class="kpi-card kpi-inoperante"><h4>Bancadas Inoperantes</h4><div class="val" id="kpiInoperantes">0 <span class="pct">(0%)</span></div></div>
+        </div>
+        <div class="controls">
+            <input type="date" id="dataAuditoria">
+            <select id="infeedSeletorAudit" style="font-weight:bold">
+                <option value="11">Infeed 11</option><option value="12">Infeed 12</option>
+                <option value="13">Infeed 13</option><option value="14">Infeed 14</option>
+                <option value="21">Infeed 21</option><option value="22">Infeed 22</option>
+                <option value="24">Infeed 24</option>
+            </select>
+            <div class="escala-group">
+                <label><input type="checkbox" class="chk-esc" value="A" checked onchange="renderBancadas()"> A</label>
+                <label><input type="checkbox" class="chk-esc" value="B" checked onchange="renderBancadas()"> B</label>
+                <label><input type="checkbox" class="chk-esc" value="C" checked onchange="renderBancadas()"> C</label>
+                <label><input type="checkbox" class="chk-esc" value="D" checked onchange="renderBancadas()"> D</label>
+            </div>
+            <button class="btn-blue" id="btnSalvar" onclick="salvarAuditoria()">💾 Salvar na Nuvem</button>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th width="50">Bancada</th><th width="200">Colaborador</th><th width="300">Critérios 5S</th><th>Verif. 1</th><th>Verif. 2</th><th>Verif. 3</th><th width="80">% Final</th></tr>
+                </thead>
+                <tbody id="tabelaBancadas"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="abaRanking" style="display:none">
+        <div class="controls">
+            <input type="date" id="dataInicio"> até <input type="date" id="dataFim">
+            <select id="filtroEscalaRank">
+                <option value="all">Todas Escalas</option>
+                <option value="A">Escala A</option><option value="B">Escala B</option>
+                <option value="C">Escala C</option><option value="D">Escala D</option>
+            </select>
+            <button class="btn-blue" onclick="aplicarFiltroPeriodo()">🔎 Filtrar</button>
+            <button class="btn-export" onclick="baixarRanking()">🖼️ Baixar Top 3</button>
+        </div>
+        <div class="rank-grid">
+            <div>
+                <div id="export-area" class="rank-box">
+                    <div id="export-title-area">
+                        <h2>🏆 Melhores do Período - Gestão 5S</h2>
+                        <p id="export-detalhes-filtro"></p>
+                    </div>
+                    <h3 id="tituloRankingInterno">🏆 Melhores do Período</h3>
+                    <div id="top3Content"></div>
+                </div>
+                <div class="rank-box">
+                    <h3>📊 Performance da Equipe</h3>
+                    <div class="full-list" id="listaGeralMedias"></div>
+                </div>
+            </div>
+            <div class="rank-box">
+                <h3>📜 Histórico Detalhado</h3>
+                <table class="hist-table">
+                    <thead><tr><th>Data</th><th>Infeed</th><th>Escala</th><th>Colaborador</th><th>%</th></tr></thead>
+                    <tbody id="historicoContent"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    Desenvolvido por Álef Veríssimo &copy; 2026
+</footer>
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx6UJzPH1ur7KTGZTY3b9EXO4y5dRBetGET0i5x62kawQ7WB49ri9BOtit1NJnicI_y/exec";
+let SENHA_ADMIN = "admin123"; 
+let dados = { A:[], B:[], C:[], D:[] };
+let historico5S = [];
+
+async function carregarDadosNuvem() {
+    try {
+        const response = await fetch(WEB_APP_URL);
+        const resJson = await response.json();
+        if(resJson.senhaAtual) SENHA_ADMIN = resJson.senhaAtual;
+        if(resJson.equipe) {
+            dados = { A:[], B:[], C:[], D:[] }; 
+            Object.keys(resJson.equipe).forEach(esc => {
+                if(dados[esc]) dados[esc] = resJson.equipe[esc];
+            });
+        }
+        if(resJson.historico) historico5S = resJson.historico;
+        renderEquipe(); 
+        renderBancadas(); 
+        aplicarFiltroPeriodo();
+        document.getElementById('loadingOverlay').style.display = 'none';
+    } catch (e) { 
+        document.getElementById('loadingText').innerText = "Erro ao sincronizar dados."; 
+    }
+}
+
+async function configurarSenha() {
+    let atual = prompt("🔐 Senha ADMINISTRADOR atual:");
+    if (atual === SENHA_ADMIN) {
+        let nova = prompt("✨ Nova senha:");
+        if (nova && nova.trim() !== "") {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            await fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action: "CHANGE_PASSWORD", novaSenha: nova })
+            });
+            alert("✅ Senha alterada com sucesso!");
+            location.reload();
+        }
+    } else if (atual !== null) alert("❌ Senha incorreta!");
+}
+
+function renderEquipe() {
+    const kpis = document.getElementById("kpisEscalas");
+    const dash = document.getElementById("dashboardEscalas");
+    kpis.innerHTML = ""; dash.innerHTML = "";
+    ["A","B","C","D"].forEach(esc => {
+        let lista = dados[esc] || [];
+        kpis.innerHTML += `<div class="kpi-card"><h4>Escala ${esc}</h4><div class="val">${lista.length}</div></div>`;
+        let card = `<div class="rank-box"><h3>Escala ${esc}</h3><div style="display:flex; flex-wrap:wrap; gap:8px">`;
+        if(lista.length === 0) card += `<span style="color:#999; font-size:11px">Nenhum colaborador cadastrado</span>`;
+        lista.forEach(n => {
+            card += `<div style="background:#fff; padding:5px 10px; border:1px solid #d1d5db; border-radius:15px; font-size:11px">${n} <span style="color:red; cursor:pointer; font-weight:bold; margin-left:5px" onclick="removerMembro('${esc}','${n}')">✕</span></div>`;
+        });
+        dash.innerHTML += card + "</div></div>";
+    });
+}
+
+function renderBancadas(){
+    let tbody = document.getElementById("tabelaBancadas"); tbody.innerHTML = "";
+    let marcadas = Array.from(document.querySelectorAll('.chk-esc:checked')).map(c => c.value);
+    let nomes = []; marcadas.forEach(m => { if(dados[m]) nomes = nomes.concat(dados[m]); });
+    nomes.sort();
+    for(let i=1; i<=24; i++) {
+        let opt = `<option value="">--Vazio--</option>`;
+        nomes.forEach(n => opt += `<option value="${n}">${n}</option>`);
+        opt += `<option value="INOPERANTE">INOPERANTE</option>`;
+        const crits = ["1. Sem fitilhos no chão","2. Insumos no layout correto","3. Tratativas de PS no suporte","4. Itens volumosos nas gaiolas","5. Altura ideal de bandejas"];
+        let critH = '<div class="crit-container">'; crits.forEach(c => critH += `<div class="crit-item">${c}</div>`); critH += '</div>';
+        const geraG = (v) => {
+            let h = '<div class="sel-container">';
+            for(let c=1; c<=5; c++) h += `<div class="sel-wrapper"><select id="b${i}_v${v}_c${c}" class="sel-5s" onchange="atualizarEstilo(this); calcularScore(${i})"><option value="">-</option><option value="1">OK</option><option value="0">NOK</option></select></div>`;
+            return h + '</div>';
+        }
+        tbody.innerHTML += `<tr><td><b>${i}</b></td><td><select id="select${i}" style="width:95%" onchange="validarSelecaoUnica(this); atualizarKpisBancadas()">${opt}</select></td><td>${critH}</td><td>${geraG(1)}</td><td>${geraG(2)}</td><td>${geraG(3)}</td><td><span id="score${i}" style="font-weight:900; font-size:20px; color:var(--accent)">0%</span></td></tr>`;
+    }
+}
+
+function validarSelecaoUnica(selectAtual) {
+    const nomeEscolhido = selectAtual.value;
+    if (!nomeEscolhido || nomeEscolhido === "INOPERANTE") return;
+    const selects = document.querySelectorAll('[id^="select"]');
+    let jaExiste = false;
+    selects.forEach(s => { if (s.id !== selectAtual.id && s.value === nomeEscolhido) jaExiste = true; });
+    if (jaExiste) { alert("⚠️ Este colaborador já foi selecionado em outra bancada!"); selectAtual.value = ""; }
+}
+
+function atualizarEstilo(el){ 
+    el.className = "sel-5s"; 
+    if(el.value==="1") el.classList.add("txt-ok"); 
+    if(el.value==="0") el.classList.add("txt-nc"); 
+}
+
+function calcularScore(i){
+    let sels = document.querySelectorAll(`[id^="b${i}_v"]`);
+    let p=0, pts=0; sels.forEach(s => { if(s.value!=="") { p++; pts+=parseInt(s.value); } });
+    document.getElementById("score"+i).textContent = (p===0 ? 0 : Math.round((pts/p)*100)) + "%";
+}
+
+function atualizarKpisBancadas() {
+    let o=0, inp=0; for(let i=1; i<=24; i++) { let v=document.getElementById("select"+i).value; if(v==="INOPERANTE") inp++; else if(v!=="") o++; }
+    document.getElementById("kpiOcupadas").innerHTML = `${o} <span class="pct">(${Math.round(o/24*100)}%)</span>`;
+    document.getElementById("kpiDisponiveis").innerHTML = `${24-o-inp} <span class="pct">(${Math.round((24-o-inp)/24*100)}%)</span>`;
+    document.getElementById("kpiInoperantes").innerHTML = `${inp} <span class="pct">(${Math.round(inp/24*100)}%)</span>`;
+}
+
+function formatarDataBR(dataIso) {
+    if(!dataIso) return "Início";
+    const p = dataIso.split('-');
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : dataIso;
+}
+
+function aplicarFiltroPeriodo(){
+    let ini = document.getElementById("dataInicio").value, fim = document.getElementById("dataFim").value, esc = document.getElementById("filtroEscalaRank").value;
+    
+    // ATUALIZAÇÃO: Texto dinâmico para a exportação
+    let escalaTxt = esc === 'all' ? 'Todas' : esc;
+    let dataTxt = (ini && fim) ? `${formatarDataBR(ini)} até ${formatarDataBR(fim)}` : "Geral";
+    document.getElementById("export-detalhes-filtro").innerText = `Período: ${dataTxt} | Escala: ${escalaTxt}`;
+
+    let filtrados = historico5S.filter(h => {
+        let dIso = h.data.toString().includes('T') ? h.data.split('T')[0] : h.data;
+        return ((ini && fim) ? (dIso >= ini && dIso <= fim) : true) && ((esc==='all') ? true : (h.escala===esc));
+    });
+    let agrp = {}; filtrados.forEach(h => { if(!agrp[h.colaborador]) agrp[h.colaborador] = { s:0, c:0 }; let v=parseFloat(h.score); agrp[h.colaborador].s+=v; agrp[h.colaborador].c++; });
+    let rnk = Object.keys(agrp).map(n => ({ n, m:Math.round(agrp[n].s/agrp[n].c) })).sort((a,b)=>b.m-a.m);
+    let topH = ""; rnk.slice(0,3).forEach((t,i) => topH += `<div class="rank-item"><span>${i+1}º ${t.n}</span> <span class="score-val">${t.m}%</span></div>`);
+    document.getElementById("top3Content").innerHTML = topH || "Sem dados";
+    let gerH = ""; rnk.forEach(t => gerH += `<div class="rank-item" style="font-weight:normal"><span>${t.n}</span> <span>${t.m}%</span></div>`);
+    document.getElementById("listaGeralMedias").innerHTML = gerH || "Sem dados";
+    let histH = ""; 
+    filtrados.reverse().forEach(h => {
+        let dE = h.data; if(h.data && h.data.toString().includes('-')) { let p = h.data.toString().split('T')[0].split('-'); if(p.length === 3) dE = `${p[2]}/${p[1]}/${p[0]}`; }
+        histH += `<tr><td>${dE}</td><td>${h.infeed}</td><td>${h.escala}</td><td>${h.colaborador}</td><td><b>${h.score}%</b></td></tr>`;
+    });
+    document.getElementById("historicoContent").innerHTML = histH;
+}
+
+async function adicionarMembro() {
+    let n=document.getElementById("nome").value, e=document.getElementById("escalaAdd").value; 
+    if(!n || prompt("🔐 Senha:")!==SENHA_ADMIN) return;
+    document.getElementById('loadingOverlay').style.display='flex';
+    await fetch(WEB_APP_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"ADD_MEMBER",nome:n,escala:e})});
+    location.reload();
+}
+
+async function removerMembro(e,n) {
+    if(prompt("🔐 Senha:")!==SENHA_ADMIN || !confirm(`Remover ${n}?`)) return;
+    document.getElementById('loadingOverlay').style.display='flex';
+    await fetch(WEB_APP_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:"REMOVE_MEMBER",nome:n,escala:e})});
+    location.reload();
+}
+
+async function salvarAuditoria(){
+    let inf=document.getElementById("infeedSeletorAudit").value, dt=document.getElementById("dataAuditoria").value, regs=[];
+    if(!dt) return alert("⚠️ Selecione a data!");
+    for(let i=1;i<=24;i++){
+        let n=document.getElementById("select"+i).value, sc=document.getElementById("score"+i).textContent;
+        if(n && n!=="INOPERANTE" && sc!=="0%"){
+            let esc="Indef"; Object.keys(dados).forEach(e=>{if(dados[e].includes(n)) esc=e;});
+            regs.push({data:dt,infeed:inf,escala:esc,colaborador:n,score:parseInt(sc)});
+        }
+    }
+    if(regs.length===0) return alert("⚠️ Preencha as notas.");
+    document.getElementById('loadingOverlay').style.display='flex';
+    await fetch(WEB_APP_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(regs)});
+    location.reload();
+}
+
+function baixarRanking(){ 
+    const area = document.getElementById("export-area");
+    const tituloOculto = document.getElementById("export-title-area");
+    const tituloNormal = document.getElementById("tituloRankingInterno");
+    
+    // Mostra o cabeçalho completo para a foto e esconde o título simples
+    tituloOculto.style.display = 'block';
+    tituloNormal.style.display = 'none';
+
+    html2canvas(area, { backgroundColor: "#ffffff", scale: 2 }).then(c => { 
+        let l=document.createElement('a'); l.download=`Top3_5S.jpg`; l.href=c.toDataURL("image/jpeg", 0.9); l.click(); 
+        
+        // Volta ao estado original no dashboard
+        tituloOculto.style.display = 'none';
+        tituloNormal.style.display = 'block';
+    }); 
+}
+
+function trocarAba(ev,a){
+    document.getElementById("abaEscalas").style.display=a==='escala'?'block':'none';
+    document.getElementById("abaBancadas").style.display=a==='bancadas'?'block':'none';
+    document.getElementById("abaRanking").style.display=a==='ranking'?'block':'none';
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); ev.target.classList.add('active');
+}
+
+carregarDadosNuvem();
+</script>
+</body>
+</html>
